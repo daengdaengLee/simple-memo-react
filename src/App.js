@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 
 const Header = styled.header`
   display: flex;
@@ -26,6 +26,7 @@ const InputNew = styled.input`
 `;
 
 const Button = styled.button`
+  ${props => props.width && css`width: ${props.width};`}
   margin-left: 1rem;
   border: 0 none;
   outline: 0 none;
@@ -41,6 +42,21 @@ const Button = styled.button`
   }
 `;
 
+const Card = styled.div`
+  display: flex;
+  margin: 2rem 30rem;
+  height: 2rem;
+`;
+
+const InputEdit = styled.input`
+  flex-grow: 1;
+  font-size: 1.2rem;
+  border: 1px solid #0D47A1;
+  border-radius: .2rem;
+  padding-left: .4rem;
+  background-color: #E0F7FA;
+`;
+
 class App extends Component {
   render() {
     return (
@@ -50,8 +66,13 @@ class App extends Component {
         </Header>
         <InputField>
           <InputNew placeholder="Input the memo" />
-          <Button>CREATE</Button>
+          <Button width="11rem">CREATE</Button>
         </InputField>
+        <Card>
+          <InputEdit value="Test memo" disabled />
+          <Button width="5rem">Edit</Button>
+          <Button width="5rem">Delete</Button>
+        </Card>
       </div>
     );
   }
