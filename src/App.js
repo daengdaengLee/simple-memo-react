@@ -71,6 +71,10 @@ const createNewMemo = newId => prevState => ({
   memos: [...prevState.memos, { id: newId, content: prevState.newMemo }],
 });
 
+const deleteMemo = id => prevState => ({
+  memos: prevState.memos.filter(memo => memo.id !== id),
+});
+
 class App extends Component {
   constructor(props) {
     super(props);
@@ -80,10 +84,11 @@ class App extends Component {
     };
     this._inputNewMemo = this._inputNewMemo.bind(this);
     this._createNewMemo = this._createNewMemo.bind(this);
+    this._deleteMemo = this._deleteMemo.bind(this);
   }
 
   render() {
-    const { _inputNewMemo, _createNewMemo } = this;
+    const { _inputNewMemo, _createNewMemo, _deleteMemo } = this;
     const { newMemo, memos } = this.state;
     return (
       <div className="App">
@@ -103,7 +108,9 @@ class App extends Component {
             <Card key={memo.id}>
               <InputEdit value={memo.content} disabled />
               <Button width="5rem">Edit</Button>
-              <Button width="5rem">Delete</Button>
+              <Button width="5rem" onClick={() => _deleteMemo(memo.id)}>
+                Delete
+              </Button>
             </Card>
           ))}
         </CardList>
@@ -118,6 +125,10 @@ class App extends Component {
 
   _createNewMemo() {
     this.setState(createNewMemo(uuidv1()));
+  }
+
+  _deleteMemo(id) {
+    this.setState(deleteMemo(id));
   }
 }
 
