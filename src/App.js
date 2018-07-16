@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import styled, { css } from 'styled-components';
+import uuidv1 from 'uuid/v1';
 
 const Header = styled.header`
   display: flex;
@@ -65,139 +66,58 @@ const CardList = styled.div`
   flex-direction: column;
 `;
 
+const createNewMemo = newId => prevState => ({
+  newMemo: '',
+  memos: [...prevState.memos, { id: newId, content: prevState.newMemo }],
+});
+
 class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      newMemo: '',
+      memos: [],
+    };
+    this._inputNewMemo = this._inputNewMemo.bind(this);
+    this._createNewMemo = this._createNewMemo.bind(this);
+  }
+
   render() {
+    const { _inputNewMemo, _createNewMemo } = this;
+    const { newMemo, memos } = this.state;
     return (
       <div className="App">
         <Header>Simple Memo App</Header>
         <InputField>
-          <InputNew placeholder="Input the memo" />
-          <Button width="11rem">CREATE</Button>
+          <InputNew
+            placeholder="Input the memo"
+            value={newMemo}
+            onInput={_inputNewMemo}
+          />
+          <Button width="11rem" onClick={_createNewMemo}>
+            CREATE
+          </Button>
         </InputField>
         <CardList>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
-          <Card>
-            <InputEdit value="Test memo" disabled />
-            <Button width="5rem">Edit</Button>
-            <Button width="5rem">Delete</Button>
-          </Card>
+          {memos.map(memo => (
+            <Card key={memo.id}>
+              <InputEdit value={memo.content} disabled />
+              <Button width="5rem">Edit</Button>
+              <Button width="5rem">Delete</Button>
+            </Card>
+          ))}
         </CardList>
       </div>
     );
+  }
+
+  _inputNewMemo(event) {
+    const newMemo = event.target.value;
+    this.setState({ newMemo });
+  }
+
+  _createNewMemo() {
+    this.setState(createNewMemo(uuidv1()));
   }
 }
 
