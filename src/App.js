@@ -66,14 +66,79 @@ const CardList = styled.div`
   flex-direction: column;
 `;
 
-const createNewMemo = newId => prevState => ({
+const createNewMemo = id => prevState => ({
   newMemo: '',
-  memos: [...prevState.memos, { id: newId, content: prevState.newMemo }],
+  memos: [
+    {
+      id,
+      content: prevState.newMemo,
+      isEditing: false,
+      editingContent: '',
+    },
+    ...prevState.memos,
+  ],
 });
 
 const deleteMemo = id => prevState => ({
   memos: prevState.memos.filter(memo => memo.id !== id),
 });
+
+const startEdit = id => prevState => {
+  const editingMemo = prevState.memos.find(memo => memo.id === id);
+  const idx = prevState.memos.findIndex(memo => memo.id === id);
+  return {
+    memos: [
+      ...prevState.memos.slice(0, idx),
+      { ...editingMemo, isEditing: true, editingContent: editingMemo.content },
+      ...prevState.memos.slice(idx + 1),
+    ],
+  };
+};
+
+const inputEditing = (id, memo) => prevState => {
+  const editingMemo = prevState.memos.find(memo => memo.id === id);
+  const idx = prevState.memos.findIndex(memo => memo.id === id);
+  return {
+    memos: [
+      ...prevState.memos.slice(0, idx),
+      { ...editingMemo, editingContent: memo },
+      ...prevState.memos.slice(idx + 1),
+    ],
+  };
+};
+
+const saveEditing = id => prevState => {
+  const editingMemo = prevState.memos.find(memo => memo.id === id);
+  const idx = prevState.memos.findIndex(memo => memo.id === id);
+  return {
+    memos: [
+      ...prevState.memos.slice(0, idx),
+      {
+        ...editingMemo,
+        content: editingMemo.editingContent,
+        isEditing: false,
+        editingContent: '',
+      },
+      ...prevState.memos.slice(idx + 1),
+    ],
+  };
+};
+
+const cancelEditing = id => prevState => {
+  const editingMemo = prevState.memos.find(memo => memo.id === id);
+  const idx = prevState.memos.findIndex(memo => memo.id === id);
+  return {
+    memos: [
+      ...prevState.memos.slice(0, idx),
+      {
+        ...editingMemo,
+        isEditing: false,
+        editingContent: '',
+      },
+      ...prevState.memos.slice(idx + 1),
+    ],
+  };
+};
 
 class App extends Component {
   constructor(props) {
@@ -85,10 +150,22 @@ class App extends Component {
     this._inputNewMemo = this._inputNewMemo.bind(this);
     this._createNewMemo = this._createNewMemo.bind(this);
     this._deleteMemo = this._deleteMemo.bind(this);
+    this._startEdit = this._startEdit.bind(this);
+    this._inputEditing = this._inputEditing.bind(this);
+    this._saveEditing = this._saveEditing.bind(this);
+    this._cancelEditing = this._cancelEditing.bind(this);
   }
 
   render() {
-    const { _inputNewMemo, _createNewMemo, _deleteMemo } = this;
+    const {
+      _inputNewMemo,
+      _createNewMemo,
+      _deleteMemo,
+      _startEdit,
+      _inputEditing,
+      _saveEditing,
+      _cancelEditing,
+    } = this;
     const { newMemo, memos } = this.state;
     return (
       <div className="App">
@@ -106,11 +183,29 @@ class App extends Component {
         <CardList>
           {memos.map(memo => (
             <Card key={memo.id}>
-              <InputEdit value={memo.content} disabled />
-              <Button width="5rem">Edit</Button>
-              <Button width="5rem" onClick={() => _deleteMemo(memo.id)}>
-                Delete
-              </Button>
+              <InputEdit
+                value={memo.isEditing ? memo.editingContent : memo.content}
+                disabled={!memo.isEditing}
+                onChange={event => _inputEditing(memo.id, event)}
+              />
+              {memo.isEditing ? (
+                <Button width="5rem" onClick={() => _saveEditing(memo.id)}>
+                  Save
+                </Button>
+              ) : (
+                <Button width="5rem" onClick={() => _startEdit(memo.id)}>
+                  Edit
+                </Button>
+              )}
+              {memo.isEditing ? (
+                <Button width="5rem" onClick={() => _cancelEditing(memo.id)}>
+                  Cancel
+                </Button>
+              ) : (
+                <Button width="5rem" onClick={() => _deleteMemo(memo.id)}>
+                  Delete
+                </Button>
+              )}
             </Card>
           ))}
         </CardList>
@@ -129,6 +224,23 @@ class App extends Component {
 
   _deleteMemo(id) {
     this.setState(deleteMemo(id));
+  }
+
+  _startEdit(id) {
+    this.setState(startEdit(id));
+  }
+
+  _inputEditing(id, event) {
+    const editingMemo = event.target.value;
+    this.setState(inputEditing(id, editingMemo));
+  }
+
+  _saveEditing(id) {
+    this.setState(saveEditing(id));
+  }
+
+  _cancelEditing(id) {
+    this.setState(cancelEditing(id));
   }
 }
 
