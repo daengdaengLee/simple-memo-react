@@ -6,82 +6,78 @@ const find = (predi, list) => list.find(predi);
 
 const findIndex = (predi, list) => list.findIndex(predi);
 
+const filter = (predi, list) => list.filter(predi);
+
 const not = val => !val;
 
 const isSameId = id => obj => obj.id === id;
 
-const createNewMemo = id => prevState => ({
-  newMemo: '',
-  memos: [
-    {
-      id,
-      content: prevState.newMemo,
-      isEditing: false,
-      editingContent: '',
-    },
-    ...prevState.memos,
-  ],
+const setNewMemo = newMemo => state => ({ ...state, newMemo });
+
+const unshiftMemos = memo => state => ({
+  ...state,
+  memos: [memo, ...state.memos],
 });
 
-const deleteMemo = id => prevState => ({
-  memos: prevState.memos.filter(memo => not(isSameId(id)(memo))),
+const filterMemos = predi => state => ({
+  ...state,
+  memos: filter(predi, state.memos),
 });
+
+const replaceMemos = (idx, memo) => state => ({
+  ...state,
+  memos: [...state.memos.slice(0, idx), memo, ...state.memos.slice(idx + 1)],
+});
+
+const createNewMemo = id => prevState => {
+  const unshiftMemosState = unshiftMemos({
+    id,
+    content: prevState.newMemo,
+    isEditing: false,
+    editingContent: '',
+  })(prevState);
+  const resetNewMemoState = setNewMemo('')(unshiftMemosState);
+  return resetNewMemoState;
+};
+
+const deleteMemo = id => prevState =>
+  filterMemos(memo => not(isSameId(id)(memo)))(prevState);
 
 const startEdit = id => prevState => {
   const editingMemo = find(isSameId(id), prevState.memos);
   const idx = findIndex(isSameId(id), prevState.memos);
-  return {
-    memos: [
-      ...prevState.memos.slice(0, idx),
-      { ...editingMemo, isEditing: true, editingContent: editingMemo.content },
-      ...prevState.memos.slice(idx + 1),
-    ],
-  };
+  return replaceMemos(idx, {
+    ...editingMemo,
+    isEditing: true,
+    editingContent: editingMemo.content,
+  })(prevState);
 };
 
 const inputEditing = (id, memo) => prevState => {
   const editingMemo = find(isSameId(id), prevState.memos);
   const idx = findIndex(isSameId(id), prevState.memos);
-  return {
-    memos: [
-      ...prevState.memos.slice(0, idx),
-      { ...editingMemo, editingContent: memo },
-      ...prevState.memos.slice(idx + 1),
-    ],
-  };
+  return replaceMemos(idx, { ...editingMemo, editingContent: memo })(prevState);
 };
 
 const saveEditing = id => prevState => {
   const editingMemo = find(isSameId(id), prevState.memos);
   const idx = findIndex(isSameId(id), prevState.memos);
-  return {
-    memos: [
-      ...prevState.memos.slice(0, idx),
-      {
-        ...editingMemo,
-        content: editingMemo.editingContent,
-        isEditing: false,
-        editingContent: '',
-      },
-      ...prevState.memos.slice(idx + 1),
-    ],
-  };
+  return replaceMemos(idx, {
+    ...editingMemo,
+    content: editingMemo.editingContent,
+    isEditing: false,
+    editingContent: '',
+  })(prevState);
 };
 
 const cancelEditing = id => prevState => {
   const editingMemo = find(isSameId(id), prevState.memos);
   const idx = findIndex(isSameId(id), prevState.memos);
-  return {
-    memos: [
-      ...prevState.memos.slice(0, idx),
-      {
-        ...editingMemo,
-        isEditing: false,
-        editingContent: '',
-      },
-      ...prevState.memos.slice(idx + 1),
-    ],
-  };
+  return replaceMemos(idx, {
+    ...editingMemo,
+    isEditing: false,
+    editingContent: '',
+  })(prevState);
 };
 
 const validateCreateNewMemo = state => state.newMemo.trim().length > 0;
@@ -131,7 +127,7 @@ class MemoPage extends Component {
 
   _inputNewMemo(event) {
     const newMemo = event.target.value;
-    this.setState({ newMemo });
+    this.setState(setNewMemo(newMemo));
   }
 
   _createNewMemo() {
@@ -163,7 +159,7 @@ class MemoPage extends Component {
 
   _failedToMakeNewMemo() {
     alert('Cannot make empty memo.');
-    this.setState({ newMemo: '' });
+    this.setState(setNewMemo(''));
   }
 }
 
