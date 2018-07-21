@@ -80,7 +80,21 @@ const cancelEditing = id => prevState => {
   })(prevState);
 };
 
-const validateCreateNewMemo = state => state.newMemo.trim().length > 0;
+const resetEditing = id => state => {
+  const editingMemo = find(isSameId(id), state.memos);
+  const idx = findIndex(isSameId(id), state.memos);
+  return replaceMemos(idx, {
+    ...editingMemo,
+    editingContent: editingMemo.content,
+  })(state);
+};
+
+const validateMemo = memo => memo.trim().length > 0;
+
+const validateCreateNewMemo = state => validateMemo(state.newMemo);
+
+const validateEditingMemo = (id, state) =>
+  validateMemo(find(isSameId(id), state.memos).editingContent);
 
 class MemoPage extends Component {
   constructor(props) {
@@ -97,6 +111,7 @@ class MemoPage extends Component {
     this._saveEditing = this._saveEditing.bind(this);
     this._cancelEditing = this._cancelEditing.bind(this);
     this._failedToMakeNewMemo = this._failedToMakeNewMemo.bind(this);
+    this._failedToSaveEditing = this._failedToSaveEditing.bind(this);
   }
 
   render() {
@@ -150,7 +165,9 @@ class MemoPage extends Component {
   }
 
   _saveEditing(id) {
-    this.setState(saveEditing(id));
+    validateEditingMemo(id, this.state)
+      ? this.setState(saveEditing(id))
+      : this._failedToSaveEditing(id);
   }
 
   _cancelEditing(id) {
@@ -160,6 +177,11 @@ class MemoPage extends Component {
   _failedToMakeNewMemo() {
     alert('Cannot make empty memo.');
     this.setState(setNewMemo(''));
+  }
+
+  _failedToSaveEditing(id) {
+    alert('Cannot make empty memo.');
+    this.setState(resetEditing(id));
   }
 }
 
