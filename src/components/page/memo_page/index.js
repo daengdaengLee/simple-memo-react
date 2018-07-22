@@ -1,16 +1,22 @@
 import React, { Component } from 'react';
 import uuidv1 from 'uuid/v1';
+import _ from 'underscore';
 import Presenter from './presenter';
 
-const find = (predi, list) => list.find(predi);
+_.pipe = function(...funcs) {
+  const reversed = _.sortBy(funcs, (funcs, index) => -index);
+  return _.compose(...reversed);
+};
 
-const findIndex = (predi, list) => list.findIndex(predi);
+_.go = function(value, ...funcs) {
+  return _.pipe(...funcs)(value);
+};
 
-const filter = (predi, list) => list.filter(predi);
-
-const not = val => !val;
-
-const isSameId = id => obj => obj.id === id;
+const isSameId = id =>
+  _.pipe(
+    _.property('id'),
+    _.partial(_.isEqual, _, id),
+  );
 
 const setNewMemo = newMemo => state => ({ ...state, newMemo });
 
@@ -19,76 +25,94 @@ const unshiftMemos = memo => state => ({
   memos: [memo, ...state.memos],
 });
 
-const filterMemos = predi => state => ({
-  ...state,
-  memos: filter(predi, state.memos),
-});
+const filterMemos = predi => state =>
+  _.go(state, _.property('memos'), _.partial(_.filter, _, predi), memos => ({
+    ...state,
+    memos,
+  }));
 
-const replaceMemos = (idx, memo) => state => ({
-  ...state,
-  memos: [...state.memos.slice(0, idx), memo, ...state.memos.slice(idx + 1)],
-});
+const replaceMemos = (idx, memo) => state =>
+  _.go(
+    state,
+    _.property('memos'),
+    memos => [...memos.slice(0, idx), memo, ...memos.slice(idx + 1)],
+    memos => ({ ...state, memos }),
+  );
 
 const changeMemo = (id, changer) => state => {
-  const idx = findIndex(isSameId(id), state.memos);
-  const editingMemo = find(isSameId(id), state.memos);
-  const changedMemo = changer(editingMemo);
+  const idx = _.findIndex(state.memos, isSameId(id));
+  const changedMemo = _.go(
+    state,
+    _.property('memos'),
+    _.partial(_.find, _, isSameId(id)),
+    changer,
+  );
   return replaceMemos(idx, changedMemo)(state);
 };
 
-const createNewMemo = id => state => {
-  const unshiftMemosState = unshiftMemos({
-    id,
-    content: state.newMemo,
-    isEditing: false,
-    editingContent: '',
-  })(state);
-  const resetNewMemoState = setNewMemo('')(unshiftMemosState);
-  return resetNewMemoState;
-};
-
-const deleteMemo = id => state =>
-  filterMemos(memo => not(isSameId(id)(memo)))(state);
-
-const startEdit = id => state =>
-  changeMemo(id, editingMemo => ({
-    ...editingMemo,
-    isEditing: true,
-    editingContent: editingMemo.content,
-  }))(state);
-
-const inputEditing = (id, memo) => state =>
-  changeMemo(id, editingMemo => ({ ...editingMemo, editingContent: memo }))(
+const createNewMemo = id => state =>
+  _.go(
     state,
+    unshiftMemos({
+      id,
+      content: state.newMemo,
+      isEditing: false,
+      editingContent: '',
+    }),
+    setNewMemo(''),
   );
 
+const deleteMemo = id => state =>
+  _.go(state, filterMemos(_.go(id, isSameId, _.negate)));
+
+const startEdit = id => state =>
+  _.go(
+    state,
+    changeMemo(id, memo => ({
+      ...memo,
+      isEditing: true,
+      editingContent: memo.content,
+    })),
+  );
+
+const inputEditing = (id, content) => state =>
+  _.go(state, changeMemo(id, memo => ({ ...memo, editingContent: content })));
+
 const saveEditing = id => state =>
-  changeMemo(id, editingMemo => ({
-    ...editingMemo,
-    content: editingMemo.editingContent,
-    isEditing: false,
-    editingContent: '',
-  }))(state);
+  _.go(
+    state,
+    changeMemo(id, memo => ({
+      ...memo,
+      content: memo.editingContent,
+      isEditing: false,
+      editingContent: '',
+    })),
+  );
 
 const cancelEditing = id => state =>
-  changeMemo(id, editingMemo => ({
-    ...editingMemo,
-    isEditing: false,
-    editingContent: '',
-  }))(state);
+  _.go(
+    state,
+    changeMemo(id, memo => ({ ...memo, isEditing: false, editingContent: '' })),
+  );
 
 const resetEditing = id => state =>
-  changeMemo(id, editingMemo => ({
-    ...editingMemo,
-    editingContent: editingMemo.content,
-  }))(state);
+  _.go(
+    state,
+    changeMemo(id, memo => ({ ...memo, editingContent: memo.content })),
+  );
 
 const validateMemo = memo => memo.trim().length > 0;
 
 const validateCreateNewMemo = state => validateMemo(state.newMemo);
 
 const validateEditingMemo = (id, state) =>
-  validateMemo(find(isSameId(id), state.memos).editingContent);
+  _.go(
+    state,
+    _.property('memos'),
+    _.partial(_.find, _, isSameId(id)),
+    _.property('editingContent'),
+    validateMemo,
+  );
 
 class MemoPage extends Component {
   constructor(props) {
